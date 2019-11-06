@@ -25,8 +25,8 @@ public class RestApplication {
           .handler(hi("Hi, here is your body."));
     // http :8080/nohi?name=world key=val
     router.post("/nohi")
-          .consumes("application/json")
           .handler(BodyHandler.create())
+          .consumes("application/json")
           .handler(hi("Nohi, here is your body."));
   }
 

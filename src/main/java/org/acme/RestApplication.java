@@ -19,17 +19,41 @@ public class RestApplication {
     // http :8080/hi?name=world
     router.get("/hi")
           .handler(rc -> rc.response().end("Hi from router"));
-    // http :8080/hi?name=world key:val
+    // http :8080/hi?name=world key=val
     router.post("/hi")
           .handler(BodyHandler.create())
           .handler(hi("Hi, here is your body."));
-    // http :8080/nohi?name=world key=val
-    router.post("/nohi")
+    router.post("/hi/bug")
+    	.consumes("application/json")
+	    .handler(BodyHandler.create())
+	    .handler(hi("Nohi, here is your body."));
+    router.post("/hi/workaround1")
           .handler(BodyHandler.create())
           .consumes("application/json")
           .handler(hi("Nohi, here is your body."));
+    router.post("/hi/workaround2")
+	    .consumes("application/json")
+	    .handler(new ResumeHandler(BodyHandler.create()))
+	    .handler(hi("Nohi, here is your body."));
   }
 
+  class ResumeHandler implements Handler<RoutingContext> {
+
+	    final Handler<RoutingContext> next;
+
+	    ResumeHandler(Handler<RoutingContext> next) {
+	        this.next = next;
+	    }
+
+	    @Override
+	    public void handle(RoutingContext event) {
+	        //we resume the request to make up for the pause that was done in the root handler
+	        //this maintains normal vert.x semantics in the handlers
+	        event.request().resume();
+	        next.handle(event);
+	    }
+	}
+  
   private Handler<RoutingContext> hi(String message) {
     return  rc -> rc.response().end(message+"\n"+new String(rc.getBody().getBytes()));
   }
